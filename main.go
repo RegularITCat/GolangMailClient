@@ -2,45 +2,46 @@ package main
 
 import (
 	"crypto/tls"
+	"database/sql"
 	"fmt"
-	"github.com/RegularITCat/GolangMailClient/pop3"
+	_ "github.com/mattn/go-sqlite3"
+	"github.com/simia-tech/go-pop3"
+	"io"
 	"log"
 	"net"
-	"net/smtp"
+	"net/mail"
+	//"net/smtp"
 	"os"
-	"strconv"
+	//"strconv"
+	"strings"
 	"time"
 )
 
-/*type loginAuth struct {
-	username, password string
-}
-
-func LoginAuth(username, password string) smtp.Auth {
-	return &loginAuth{username, password}
-}
-
-
-func (a *loginAuth) Start(server *smtp.ServerInfo) (string, []byte, error) {
-	return "LOGIN", []byte(a.username), nil
-}
-
-
-func (a *loginAuth) Next(fromServer []byte, more bool) ([]byte, error) {
-	if more {
-		switch string(fromServer) {
-		case "Username:":
-			return []byte(a.username), nil
-		case "Password:":
-			return []byte(a.password), nil
-		default:
-			return nil, errors.New("Unknown from server")
-		}
+func CreateDatabase(DBName string) error {
+	_, err := os.Create(DBName)
+	if err != nil {
+		return err
 	}
-	return nil, nil
-}*/
+	return nil
+}
 
-func main() {
+func CreateTable(DBName string) error {
+	db, err := sql.Open("sqlite3", DBName)
+	if err != nil {
+		return err
+	}
+	_, err = db.Exec("CREATE TABLE `mails` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `from` TEXT, `to` TEXT, `subject` TEXT, `body` TEXT);")
+	if err != nil {
+		return err
+	}
+	err = db.Close()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+/*func SendMessage() error {
 	host := "smtp.mailtrap.io"
 	port := 25
 	to := "to@example.com"
@@ -100,6 +101,13 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	return nil
+}
+*/
+
+func main() {
+
+	conf := &tls.Config{ServerName: "pop3.mailtrap.io"}
 
 	pop3Conn, err := net.Dial("tcp", "pop3.mailtrap.io:1100")
 	if err != nil {
@@ -116,10 +124,10 @@ func main() {
 		log.Fatal(err)
 	}
 
-	count, size, err := c.Stat()
+	/*count, size, err := c.Stat()
 	if err != nil {
 		log.Fatal(err)
-	}
+	}*/
 
 	data, err := c.ListAll()
 	if err != nil {
@@ -144,9 +152,44 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	fmt.Printf("%v, %v\n", count, size)
-	for _, msg := range messages {
-		fmt.Println(msg)
+	DBName := "./mails.db"
+	/*err = CreateDatabase(DBName)
+	if err != nil {
+		log.Fatal(err)
 	}
+	err = CreateTable(DBName)
+	if err != nil {
+		log.Fatal(err)
+	}*/
+	db, err := sql.Open("sqlite3", DBName)
+	if err != nil {
+		log.Fatal(err)
+	}
+	//fmt.Printf("%v, %v\n", count, size)
+	for _, msg := range messages {
+		reader := strings.NewReader(msg)
+		mailResponse, err := mail.ReadMessage(reader)
+		if err != nil {
+			log.Fatal(err)
+		}
+		header := mailResponse.Header
+		body, err := io.ReadAll(mailResponse.Body)
+		if err != nil {
+			log.Fatal(err)
+		}
+		//fmt.Println(body)
+		//`id` INTEGER PRIMARY KEY AUTOINCREMENT, `from` TEXT, `to` TEXT, `subject` TEXT, `body` TEXT
+		query := "INSERT INTO \"mails\" (\"from\", \"to\", \"subject\", \"body\") values($1,$2,$3,$4);"
+		result, err := db.Exec(query, header.Get("From"),
+			header.Get("To"), header.Get("Subject"), body)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println(result.LastInsertId())
+	}
+	err = db.Close()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 }
