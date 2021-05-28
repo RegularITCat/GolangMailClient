@@ -2,10 +2,11 @@ package main
 
 import (
 	"database/sql"
+	_ "github.com/mattn/go-sqlite3"
 	"os"
 )
 
-func CreateDatabase(c Config) error {
+func CreateDatabase(c *Config) error {
 	_, err := os.Create(c.DBPath)
 	if err != nil {
 		return err
@@ -13,7 +14,7 @@ func CreateDatabase(c Config) error {
 	return nil
 }
 
-func CreateTable(c Config) error {
+func CreateTable(c *Config) error {
 	db, err := sql.Open(c.DBDriver, c.DBPath)
 	if err != nil {
 		return err
@@ -34,7 +35,7 @@ type MailMap struct {
 	DBDriver string
 }
 
-func NewMailMap(c Config) *MailMap {
+func NewMailMap(c *Config) *MailMap {
 	return &MailMap{
 		DBPath:   c.DBPath,
 		DBDriver: c.DBDriver,
@@ -47,7 +48,7 @@ func (mm MailMap) Insert(m *Mail) error {
 		return err
 	}
 	query := "INSERT INTO \"mails\" (\"from\", \"to\", \"subject\", \"fullText\") values($1,$2,$3,$4);"
-	result, err := db.Exec(query, m.from, m.to, m.subject, m.fullText)
+	result, err := db.Exec(query, m.From, m.To, m.Subject, m.FullText)
 	if err != nil {
 		return err
 	}
@@ -59,7 +60,7 @@ func (mm MailMap) Insert(m *Mail) error {
 	if err != nil {
 		return err
 	}
-	m.id = int(id)
+	m.Id = int(id)
 	return nil
 }
 
@@ -69,7 +70,7 @@ func (mm MailMap) Update(m Mail) error {
 		return err
 	}
 	query := "UPDATE \"mails\" SET \"from\" = $1, \"to\" = $2, \"subject\" = $3, \"fullText\" = $4 WHERE \"id\" = $5"
-	_, err = db.Exec(query, m.from, m.to, m.subject, m.fullText, m.id)
+	_, err = db.Exec(query, m.From, m.To, m.Subject, m.FullText, m.Id)
 	if err != nil {
 		return err
 	}
@@ -96,7 +97,7 @@ func (mm MailMap) Select(id uint) (Mail, error) {
 	}
 
 	var mail Mail
-	err = row.Scan(&mail.id, &mail.from, &mail.to, &mail.subject, &mail.fullText)
+	err = row.Scan(&mail.Id, &mail.From, &mail.To, &mail.Subject, &mail.FullText)
 	if err != nil {
 		return Mail{}, err
 	}
@@ -120,7 +121,7 @@ func (mm *MailMap) SelectAll() ([]Mail, error) {
 	}
 	for rows.Next() {
 		m := Mail{}
-		err := rows.Scan(&m.id, &m.from, &m.to, &m.subject, &m.fullText)
+		err := rows.Scan(&m.Id, &m.From, &m.To, &m.Subject, &m.FullText)
 		if err != nil {
 			return []Mail{}, err
 		}

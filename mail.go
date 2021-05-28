@@ -1,9 +1,9 @@
 package main
 
 type Mail struct {
-	id       int
-	from     string
-	to       string
-	subject  string
-	fullText string
+	Id       int    `json:"id"`
+	From     string `json:"from"`
+	To       string `json:"to"`
+	Subject  string `json:"subject"`
+	FullText string `json:"full_text"`
 }
