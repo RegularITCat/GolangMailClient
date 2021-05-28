@@ -1,9 +1,9 @@
 package main
 
 import (
-	"GolangMailClient/pop3"
 	"crypto/tls"
 	"fmt"
+	"github.com/RegularITCat/GolangMailClient/pop3"
 	"log"
 	"net"
 	"net/smtp"
@@ -128,6 +128,7 @@ func main() {
 
 	var messages []string
 	for _, message := range data {
+		fmt.Println(message.Seq)
 		str, err := c.Retr(message.Seq)
 		if err != nil {
 			log.Fatal(err)
