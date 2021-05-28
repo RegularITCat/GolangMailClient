@@ -14,6 +14,7 @@ type Config struct {
 	Username       string
 	Password       string
 	TLSConfig      *tls.Config
+	BindAddr       string
 }
 
 func NewConfig() *Config {
@@ -26,5 +27,6 @@ func NewConfig() *Config {
 		TLSConfig:      &tls.Config{ServerName: "mailtrap.io"},
 		Username:       os.Getenv("MAILTRAP_USERNAME"),
 		Password:       os.Getenv("MAILTRAP_PASSWORD"),
+		BindAddr:       ":8080",
 	}
 }
