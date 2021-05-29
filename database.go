@@ -104,28 +104,28 @@ func (mm MailMap) Select(id uint) (Mail, error) {
 	return mail, nil
 }
 
-func (mm *MailMap) SelectAll() ([]Mail, error) {
-	var mails []Mail
+func (mm *MailMap) SelectAll() (map[int]Mail, error) {
+	mails := make(map[int]Mail)
 	db, err := sql.Open(mm.DBDriver, mm.DBPath)
 	if err != nil {
-		return []Mail{}, err
+		return map[int]Mail{}, err
 	}
 	query := "select * from mails"
 	rows, err := db.Query(query)
 	if err != nil {
-		return []Mail{}, err
+		return map[int]Mail{}, err
 	}
 	err = db.Close()
 	if err != nil {
-		return []Mail{}, err
+		return map[int]Mail{}, err
 	}
 	for rows.Next() {
 		m := Mail{}
 		err := rows.Scan(&m.Id, &m.From, &m.To, &m.Subject, &m.FullText)
 		if err != nil {
-			return []Mail{}, err
+			return map[int]Mail{}, err
 		}
-		mails = append(mails, m)
+		mails[m.Id] = m
 	}
 	return mails, nil
 }
